@@ -2,7 +2,8 @@ function [epochGroup] = ImportPrairie(...
         epochGroup, ...
         xmlPath, ...
         maxEpochDuration,...
-        skipLineScanImages)
+        skipLineScanImages,...
+        protocolType)
     
     % Import a Prairie View experiment into the Ovation database.
     %
@@ -10,17 +11,25 @@ function [epochGroup] = ImportPrairie(...
     %    epochGroup, ...
     %	 xmlPath, ...
     %	 maxEpochDuration,...
-    %    skipLineScanImages)
+    %    skipLineScanImages,...
+    %    [protocolType])
     %
     %    epochGroup:           Imported data is inserted into this ovation.EpochGroup
     %    xmlPath:              Path to Prairie View experiment XML file
     %    maxEpochDuration:     Maximum Epoch duration in seconds
     %    skipLineScanImages:   true or false; if true, none of the images in
     %                          linescan folders are imported
+    %    protocolType:         if present, overrides XML sequence type.
+    %                          Allowed values: 'ZSeries' or 'Linescan'
     %
     %    Returns:
     %      epochGroup: ovation.EpochGroup containing the new data
     
+    error(nargchk(4, 5, nargin, 'struct')); %#ok<NCHKN>
+    
+    if(nargin < 5)
+        protocolType = '';
+    end
     
     import ovation.*;
     
@@ -159,9 +168,12 @@ function [epochGroup] = ImportPrairie(...
     for i=0:epochElements.getLength() - 1 % For each Sequence element in the XML file
         disp(['    Epoch ' num2str(i+1) '...']);
         epochItem = epochElements.item(i);
-        protocolType = char(epochItem.getAttribute('type'));
-        if(strcmp(protocolType, 'TSeries Timed Element'))
-            protocolType = 'ZSeries';
+        if(isempty(protocolType))
+            protocolType = char(epochItem.getAttribute('type'));
+        end
+        if(~strmp(protocolType, 'ZSeries') && ~strcmp(protoclType, 'Linescan'))
+            error('ovation:prairie_import:protocolType',...
+                'protocolType must be one of ''ZSeries'' or ''Linescan''');
         end
         
         % File names
